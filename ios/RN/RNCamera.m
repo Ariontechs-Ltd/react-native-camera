@@ -60,6 +60,7 @@ BOOL _sessionInterrupted = NO;
     if ((self = [super init])) {
         self.bridge = bridge;
         self.session = [AVCaptureSession new];
+        self.session.automaticallyConfiguresApplicationAudioSession = NO;
         self.sessionQueue = dispatch_queue_create("cameraQueue", DISPATCH_QUEUE_SERIAL);
         self.sensorOrientationChecker = [RNSensorOrientationChecker new];
         self.textDetector = [self createTextDetector];
@@ -1364,7 +1365,13 @@ BOOL _sessionInterrupted = NO;
 
             // test if we can activate the device input.
             // If we fail, means it is already being used
-            BOOL setActive = [[AVAudioSession sharedInstance] setActive:YES error:&error];
+            BOOL setActive = NO;
+            if (@available(iOS 10.0, *)) {
+                setActive = [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryPlayAndRecord withOptions:(AVAudioSessionCategoryOptionMixWithOthers | AVAudioSessionCategoryOptionDefaultToSpeaker |AVAudioSessionCategoryOptionAllowBluetooth | AVAudioSessionCategoryOptionAllowBluetoothA2DP |AVAudioSessionCategoryOptionAllowAirPlay ) error:&error];
+                
+            }else {
+                setActive = [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryPlayAndRecord withOptions:(AVAudioSessionCategoryOptionMixWithOthers | AVAudioSessionCategoryOptionDefaultToSpeaker |AVAudioSessionCategoryOptionAllowBluetooth ) error:&error];
+            }
 
             if (!setActive) {
                 RCTLogWarn(@"Audio device could not set active: %s: %@", __func__, error);
